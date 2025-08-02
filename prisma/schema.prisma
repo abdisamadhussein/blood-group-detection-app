@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id               String       @id @default(cuid())
+  firstName        String
+  lastName         String
+  email            String       @unique
+  phone            String
+  dateOfBirth      DateTime
+  gender           Gender
+  address          String?
+  emergencyContact String?
+  emergencyPhone   String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  scanResults      ScanResult[]
+
+  @@map("patients")
+}
+
+model ScanResult {
+  id              String    @id @default(cuid())
+  patientId       String
+  sessionId       String    @unique
+  bloodGroup      String?
+  confidence      Float?
+  scanDuration    Float?
+  status          ScanStatus @default(pending)
+  fingerprintData String?
+  apiResponse     String?
+  errorMessage    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("scan_results")
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  action    String
+  details   String?
+  level     LogLevel @default(info)
+  createdAt DateTime @default(now())
+
+  @@map("system_logs")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(operator)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum ScanStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum LogLevel {
+  info
+  warning
+  error
+}
+
+enum UserRole {
+  admin
+  operator
+  viewer
+}
