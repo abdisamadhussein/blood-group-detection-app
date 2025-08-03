@@ -136,29 +136,23 @@ export const appRouter = router({
         })
 
         try {
-          // Call FastAPI prediction endpoint
-          const predictionResponse = await fetch(`${FASTAPI_BASE_URL}/api/prediction`, {
+          // Call blood group prediction API directly
+          const BLOOD_GROUP_API_BASE_URL = process.env.BLOOD_GROUP_API_URL || "http://localhost:5000"
+          
+          const predictionResponse = await fetch(`${BLOOD_GROUP_API_BASE_URL}/predict`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              session_id: sessionId,
-              fingerprint_image: fingerprintData.imageData,
-              quality_score: fingerprintData.quality,
-              timestamp: fingerprintData.timestamp,
-              patient_metadata: {
-                id: patient.id,
-                name: `${patient.firstName} ${patient.lastName}`,
-                email: patient.email,
-              },
+              image_base64: fingerprintData.imageData,
             }),
           })
 
           if (!predictionResponse.ok) {
             const errorData = await predictionResponse.json().catch(() => ({}))
             throw new Error(
-              `FastAPI error: ${predictionResponse.status} - ${errorData.detail || predictionResponse.statusText}`,
+              `Blood Group API error: ${predictionResponse.status} - ${errorData.error || predictionResponse.statusText}`,
             )
           }
 
@@ -168,9 +162,9 @@ export const appRouter = router({
           const updatedScanResult = await prisma.scanResult.update({
             where: { id: initialScanResult.id },
             data: {
-              bloodGroup: predictionData.blood_group,
-              confidence: predictionData.confidence,
-              scanDuration: predictionData.processing_time,
+              bloodGroup: predictionData.prediction.blood_group,
+              confidence: predictionData.prediction.confidence_percentage,
+              scanDuration: predictionData.prediction.processing_time || 0,
               status: "completed",
               apiResponse: JSON.stringify(predictionData),
             },
@@ -189,7 +183,7 @@ export const appRouter = router({
           await prisma.systemLog.create({
             data: {
               action: "Blood group prediction completed",
-              details: `Patient: ${patient.firstName} ${patient.lastName}, Result: ${predictionData.blood_group}, Confidence: ${predictionData.confidence}%, Session: ${sessionId}`,
+              details: `Patient: ${patient.firstName} ${patient.lastName}, Result: ${predictionData.prediction.blood_group}, Confidence: ${predictionData.prediction.confidence_percentage}%, Session: ${sessionId}`,
               level: "info",
             },
           })
@@ -207,10 +201,10 @@ export const appRouter = router({
                 email: updatedScanResult.patient.email,
               },
               apiMetadata: {
-                processingTime: predictionData.processing_time,
-                algorithmVersion: predictionData.algorithm_version || "1.0",
-                qualityScore: predictionData.quality_assessment || fingerprintData.quality,
-                modelAccuracy: predictionData.model_accuracy || 98.5,
+                processingTime: predictionData.prediction.processing_time || 0,
+                algorithmVersion: "1.0",
+                qualityScore: fingerprintData.quality,
+                modelAccuracy: 98.5,
               },
             },
           }

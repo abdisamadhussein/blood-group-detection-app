@@ -38,6 +38,19 @@ interface ScanResult {
   scanDuration: number
 }
 
+interface BloodGroupInfo {
+  color: string
+  textColor: string
+  compatibility: string
+  percentage: string
+}
+
+type BloodGroupInfoMap = Record<BloodGroup, BloodGroupInfo>
+
+// API Configuration
+const FINGERPRINT_API_BASE_URL = "http://localhost:8080"
+const BLOOD_GROUP_API_BASE_URL = "http://localhost:5000"
+
 export default function ScanPage() {
   const searchParams = useSearchParams()
   const preselectedPatientId = searchParams.get("patientId")
@@ -46,40 +59,102 @@ export default function ScanPage() {
   const [scanState, setScanState] = useState<ScanState>("idle")
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<ScanResult | null>(null)
-  const [deviceConnected, setDeviceConnected] = useState(true)
+  const [deviceConnected, setDeviceConnected] = useState(false)
+  const [aiReady, setAiReady] = useState(false)
   const [scanHistory, setScanHistory] = useState<ScanResult[]>([])
   const [isAnimating, setIsAnimating] = useState(false)
 
   const { data: patientsData } = trpc.patients.list.useQuery({ limit: 100 })
-  const predictionMutation = trpc.prediction.create.useMutation({
-    onSuccess: (data) => {
-      const scanResult: ScanResult = {
-        bloodGroup: data.data.bloodGroup as BloodGroup,
-        confidence: data.data.confidence || 0,
-        timestamp: new Date(data.data.timestamp),
-        sessionId: data.data.sessionId,
-        scanDuration: data.data.scanDuration || 0,
-      }
-      setResult(scanResult)
-      setScanHistory((prev) => [scanResult, ...prev.slice(0, 4)])
-      setScanState("complete")
-      setIsAnimating(false)
-    },
-    onError: () => {
-      setScanState("error")
-      setIsAnimating(false)
-    },
-  })
 
-  // Simulate device connection status
+  // Check device and AI status on component mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDeviceConnected(Math.random() > 0.1)
-    }, 8000)
-    return () => clearInterval(interval)
+    checkDeviceStatus()
+    checkAIStatus()
   }, [])
 
-  const bloodGroupInfo = {
+  const checkDeviceStatus = async () => {
+    try {
+      const response = await fetch(`${FINGERPRINT_API_BASE_URL}/api/fingerprint/status`)
+      const data = await response.json()
+      setDeviceConnected(data.success)
+    } catch (error) {
+      console.error('Device status check failed:', error)
+      setDeviceConnected(false)
+    }
+  }
+
+  const checkAIStatus = async () => {
+    try {
+      const response = await fetch(`${BLOOD_GROUP_API_BASE_URL}/health`)
+      const data = await response.json()
+      setAiReady(data.status === 'healthy')
+    } catch (error) {
+      console.error('AI status check failed:', error)
+      setAiReady(false)
+    }
+  }
+
+  const connectDevice = async () => {
+    try {
+      const response = await fetch(`${FINGERPRINT_API_BASE_URL}/api/fingerprint/connect`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+      setDeviceConnected(data.success)
+      return data.success
+    } catch (error) {
+      console.error('Device connection failed:', error)
+      setDeviceConnected(false)
+      return false
+    }
+  }
+
+  const captureFingerprint = async (useQuality = false) => {
+    const endpoint = useQuality ? '/api/fingerprint/capture' : '/api/fingerprint/capture-simple'
+    
+    try {
+      const response = await fetch(`${FINGERPRINT_API_BASE_URL}${endpoint}`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+      
+      if (data.success && data.image) {
+        return data.image.base64Data
+      } else {
+        throw new Error(data.message || 'Capture failed')
+      }
+    } catch (error) {
+      console.error('Fingerprint capture failed:', error)
+      throw error
+    }
+  }
+
+  const predictBloodGroup = async (base64Image: string) => {
+    try {
+      const response = await fetch(`${BLOOD_GROUP_API_BASE_URL}/predict`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          image_base64: base64Image
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        return data
+      } else {
+        throw new Error(data.error || 'Prediction failed')
+      }
+    } catch (error) {
+      console.error('Blood group prediction failed:', error)
+      throw error
+    }
+  }
+
+  const bloodGroupInfo: BloodGroupInfoMap = {
     "A+": {
       color: "bg-gradient-to-r from-red-500 to-red-600",
       textColor: "text-white",
@@ -130,8 +205,8 @@ export default function ScanPage() {
     },
   }
 
-  const startScan = useCallback(async () => {
-    if (!selectedPatientId || !deviceConnected) return
+  const startScan = useCallback(async (useQuality = false) => {
+    if (!selectedPatientId || !deviceConnected || !aiReady) return
 
     setIsAnimating(true)
     setScanState("scanning")
@@ -139,31 +214,63 @@ export default function ScanPage() {
     setResult(null)
 
     const scanInterval = setInterval(() => {
-      setProgress((prev) => {
+      setProgress((prev: number) => {
         if (prev >= 100) {
           clearInterval(scanInterval)
-          processScan()
+          processScan(useQuality)
           return 100
         }
         return prev + 1.5
       })
     }, 60)
-  }, [selectedPatientId, deviceConnected])
+  }, [selectedPatientId, deviceConnected, aiReady])
 
-  const processScan = async () => {
+  // Add tRPC mutation for saving scan results
+  const saveScanMutation = trpc.prediction.create.useMutation({
+    onSuccess: (data: any) => {
+      const scanResult: ScanResult = {
+        bloodGroup: data.data.bloodGroup as BloodGroup,
+        confidence: data.data.confidence || 0,
+        timestamp: new Date(data.data.timestamp),
+        sessionId: data.data.sessionId,
+        scanDuration: data.data.scanDuration || 0,
+      }
+      setResult(scanResult)
+      setScanHistory((prev: ScanResult[]) => [scanResult, ...prev.slice(0, 4)])
+      setScanState("complete")
+      setIsAnimating(false)
+    },
+    onError: (error: any) => {
+      console.error('Failed to save scan result:', error)
+      setScanState("error")
+      setIsAnimating(false)
+    },
+  })
+
+  const processScan = async (useQuality = false) => {
     setScanState("processing")
 
-    // Simulate fingerprint data
-    const fingerprintData = {
-      imageData: `data:image/jpeg;base64,${Math.random().toString(36).substr(2, 100)}`,
-      quality: Math.floor(Math.random() * 20) + 80,
-      timestamp: new Date().toISOString(),
+    try {
+      // Capture fingerprint
+      const base64Fingerprint = await captureFingerprint(useQuality)
+      
+      // Predict blood group
+      const predictionData = await predictBloodGroup(base64Fingerprint)
+      
+      // Save to database using tRPC mutation
+      saveScanMutation.mutate({
+        patientId: selectedPatientId,
+        fingerprintData: {
+          imageData: base64Fingerprint,
+          quality: useQuality ? 95 : 85, // Higher quality for quality scan
+          timestamp: new Date().toISOString(),
+        },
+      })
+    } catch (error) {
+      console.error('Scan failed:', error)
+      setScanState("error")
+      setIsAnimating(false)
     }
-
-    predictionMutation.mutate({
-      patientId: selectedPatientId,
-      fingerprintData,
-    })
   }
 
   const resetScan = () => {
@@ -176,9 +283,9 @@ export default function ScanPage() {
   // Keyboard navigation support
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.code === "Space" && scanState === "idle" && deviceConnected && selectedPatientId) {
+      if (event.code === "Space" && scanState === "idle" && deviceConnected && aiReady && selectedPatientId) {
         event.preventDefault()
-        startScan()
+        startScan(false)
       } else if (event.code === "Escape" && (scanState === "complete" || scanState === "error")) {
         resetScan()
       }
@@ -186,9 +293,9 @@ export default function ScanPage() {
 
     window.addEventListener("keydown", handleKeyPress)
     return () => window.removeEventListener("keydown", handleKeyPress)
-  }, [scanState, deviceConnected, selectedPatientId, startScan])
+  }, [scanState, deviceConnected, aiReady, selectedPatientId, startScan])
 
-  const selectedPatient = patientsData?.data.find((p) => p.id === selectedPatientId)
+  const selectedPatient = patientsData?.data.find((p: any) => p.id === selectedPatientId)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -218,33 +325,43 @@ export default function ScanPage() {
         {/* Device Status Banner */}
         <Card
           className={`mb-10 transition-all duration-300 shadow-lg ${
-            deviceConnected
+            deviceConnected && aiReady
               ? "border-green-200 bg-gradient-to-r from-green-50 to-emerald-50"
               : "border-red-200 bg-gradient-to-r from-red-50 to-rose-50"
           }`}
         >
           <CardContent className="flex items-center justify-between p-8">
             <div className="flex items-center space-x-6">
-              <div className={`p-3 rounded-2xl ${deviceConnected ? "bg-green-100" : "bg-red-100"}`}>
-                {deviceConnected ? (
+              <div className={`p-3 rounded-2xl ${deviceConnected && aiReady ? "bg-green-100" : "bg-red-100"}`}>
+                {deviceConnected && aiReady ? (
                   <Wifi className="h-8 w-8 text-green-600" />
                 ) : (
                   <WifiOff className="h-8 w-8 text-red-600" />
                 )}
               </div>
               <div>
-                <p className={`text-xl font-bold ${deviceConnected ? "text-green-800" : "text-red-800"}`}>
-                  Scanner Device {deviceConnected ? "Connected" : "Disconnected"}
+                <p className={`text-xl font-bold ${deviceConnected && aiReady ? "text-green-800" : "text-red-800"}`}>
+                  System {deviceConnected && aiReady ? "Ready" : "Not Ready"}
                 </p>
-                <p className={`text-base ${deviceConnected ? "text-green-600" : "text-red-600"}`}>
-                  {deviceConnected ? "Ready for fingerprint scanning" : "Please check device connection"}
+                <p className={`text-base ${deviceConnected && aiReady ? "text-green-600" : "text-red-600"}`}>
+                  {deviceConnected && aiReady 
+                    ? "Ready for fingerprint scanning" 
+                    : !deviceConnected 
+                      ? "Fingerprint device not connected" 
+                      : "AI system not available"}
                 </p>
               </div>
             </div>
-            <Badge variant={deviceConnected ? "default" : "destructive"} className="px-6 py-3 text-base font-semibold">
-              <Activity className="h-5 w-5 mr-2" />
-              {deviceConnected ? "Online" : "Offline"}
-            </Badge>
+            <div className="flex space-x-4">
+              <Badge variant={deviceConnected ? "default" : "destructive"} className="px-6 py-3 text-base font-semibold">
+                <Activity className="h-5 w-5 mr-2" />
+                Device: {deviceConnected ? "Online" : "Offline"}
+              </Badge>
+              <Badge variant={aiReady ? "default" : "destructive"} className="px-6 py-3 text-base font-semibold">
+                <Cpu className="h-5 w-5 mr-2" />
+                AI: {aiReady ? "Ready" : "Offline"}
+              </Badge>
+            </div>
           </CardContent>
         </Card>
 
@@ -269,7 +386,7 @@ export default function ScanPage() {
                     <SelectValue placeholder="Choose a patient for scanning" />
                   </SelectTrigger>
                   <SelectContent>
-                    {patientsData?.data.map((patient) => (
+                    {patientsData?.data.map((patient: any) => (
                       <SelectItem key={patient.id} value={patient.id}>
                         <div className="flex items-center space-x-3">
                           <User className="h-4 w-4" />
@@ -325,17 +442,18 @@ export default function ScanPage() {
                                 : "border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 hover:scale-105 shadow-xl cursor-pointer"
                       }`}
                       role="button"
-                      tabIndex={scanState === "idle" && deviceConnected && selectedPatientId ? 0 : -1}
-                      onClick={scanState === "idle" && deviceConnected && selectedPatientId ? startScan : undefined}
-                      onKeyDown={(e) => {
+                      tabIndex={scanState === "idle" && deviceConnected && aiReady && selectedPatientId ? 0 : -1}
+                      onClick={scanState === "idle" && deviceConnected && aiReady && selectedPatientId ? () => startScan(false) : undefined}
+                      onKeyDown={(e: React.KeyboardEvent) => {
                         if (
                           (e.key === "Enter" || e.key === " ") &&
                           scanState === "idle" &&
                           deviceConnected &&
+                          aiReady &&
                           selectedPatientId
                         ) {
                           e.preventDefault()
-                          startScan()
+                          startScan(false)
                         }
                       }}
                     >
@@ -411,7 +529,7 @@ export default function ScanPage() {
                     <AlertCircle className="h-6 w-6" />
                     <AlertDescription className="text-lg">
                       <strong>Scan Failed:</strong>{" "}
-                      {predictionMutation.error?.message || "Unable to process fingerprint. Please try again."}
+                      {saveScanMutation.error?.message || "Unable to process fingerprint. Please try again."}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -429,15 +547,26 @@ export default function ScanPage() {
                 {/* Control Buttons */}
                 <div className="flex justify-center space-x-6">
                   {scanState === "idle" && (
-                    <Button
-                      onClick={startScan}
-                      disabled={!selectedPatientId || !deviceConnected || predictionMutation.isPending}
-                      size="lg"
-                      className="px-12 py-4 text-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-xl"
-                    >
-                      <Zap className="h-6 w-6 mr-3" />
-                      Start Scan
-                    </Button>
+                    <>
+                      <Button
+                        onClick={() => startScan(false)}
+                        disabled={!selectedPatientId || !deviceConnected || !aiReady}
+                        size="lg"
+                        className="px-12 py-4 text-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-xl"
+                      >
+                        <Zap className="h-6 w-6 mr-3" />
+                        Quick Scan
+                      </Button>
+                      <Button
+                        onClick={() => startScan(true)}
+                        disabled={!selectedPatientId || !deviceConnected || !aiReady}
+                        size="lg"
+                        className="px-12 py-4 text-xl font-semibold bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transform hover:scale-105 transition-all duration-300 shadow-xl"
+                      >
+                        <Zap className="h-6 w-6 mr-3" />
+                        Quality Scan
+                      </Button>
+                    </>
                   )}
 
                   {(scanState === "complete" || scanState === "error") && (
@@ -452,6 +581,20 @@ export default function ScanPage() {
                     </Button>
                   )}
                 </div>
+
+                {/* Device Connection Button */}
+                {!deviceConnected && (
+                  <div className="text-center">
+                    <Button
+                      onClick={connectDevice}
+                      size="lg"
+                      className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transform hover:scale-105 transition-all duration-300 shadow-xl"
+                    >
+                      <Wifi className="h-5 w-5 mr-2" />
+                      Connect Device
+                    </Button>
+                  </div>
+                )}
 
                 {/* Keyboard shortcuts */}
                 <div className="text-center text-base text-gray-500 space-y-2">
@@ -623,7 +766,7 @@ export default function ScanPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {scanHistory.map((scan, index) => (
+                    {scanHistory.map((scan: ScanResult, index: number) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200 hover:shadow-md transition-all duration-300"
