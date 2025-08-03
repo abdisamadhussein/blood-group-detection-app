@@ -2,14 +2,14 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { TRPCProvider } from "@/lib/trpc/provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { TRPCProvider } from "@/lib/trpc/provider"
 import { Navigation } from "@/components/navigation"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "BloodScan Pro - Blood Group Detection System",
+  title: "BloodScan Pro - IoT Blood Group Detection",
   description: "Advanced biometric blood group detection using fingerprint analysis",
     generator: 'v0.dev'
 }
@@ -22,12 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <TRPCProvider>
-            <div className="min-h-screen bg-background">
-              <Navigation />
-              <main className="container mx-auto px-4 py-8">{children}</main>
-            </div>
+            <Navigation />
+            {children}
           </TRPCProvider>
         </ThemeProvider>
       </body>

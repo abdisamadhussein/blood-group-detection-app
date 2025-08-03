@@ -1,355 +1,241 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { Shield, Users, Activity, BarChart3, Settings, Database, Cpu, Wifi, AlertTriangle } from "lucide-react"
+import {
+  Heart,
+  Shield,
+  Fingerprint,
+  Users,
+  Activity,
+  BarChart3,
+  ArrowRight,
+  CheckCircle,
+  Zap,
+  Database,
+} from "lucide-react"
+import Link from "next/link"
 
-export default function AdminPage() {
-  const [systemStatus, setSystemStatus] = useState({
-    cpu: 45,
-    memory: 62,
-    storage: 78,
-    network: 98,
-  })
-
-  const [stats, setStats] = useState({
-    totalScans: 1247,
-    todayScans: 23,
-    activeUsers: 5,
-    systemUptime: "99.8%",
-    avgProcessingTime: "2.8s",
-    successRate: "95.2%",
-  })
-
-  // Simulate real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSystemStatus((prev) => ({
-        cpu: Math.max(20, Math.min(80, prev.cpu + (Math.random() - 0.5) * 10)),
-        memory: Math.max(30, Math.min(90, prev.memory + (Math.random() - 0.5) * 8)),
-        storage: prev.storage,
-        network: Math.max(85, Math.min(100, prev.network + (Math.random() - 0.5) * 5)),
-      }))
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  const recentActivity = [
-    { id: 1, action: "Blood scan completed", user: "Dr. Smith", time: "2 minutes ago", status: "success" },
-    { id: 2, action: "Patient registered", user: "Nurse Johnson", time: "5 minutes ago", status: "info" },
-    { id: 3, action: "System backup completed", user: "System", time: "1 hour ago", status: "success" },
-    { id: 4, action: "Failed scan attempt", user: "Dr. Wilson", time: "2 hours ago", status: "warning" },
-    { id: 5, action: "Database maintenance", user: "Admin", time: "3 hours ago", status: "info" },
+export default function AdminHomePage() {
+  const features = [
+    {
+      icon: Fingerprint,
+      title: "Biometric Analysis",
+      description: "Advanced fingerprint scanning technology for accurate blood group detection",
+      color: "from-blue-500 to-blue-600",
+    },
+    {
+      icon: Shield,
+      title: "HIPAA Compliant",
+      description: "Secure data handling with end-to-end encryption and privacy protection",
+      color: "from-green-500 to-green-600",
+    },
+    {
+      icon: Zap,
+      title: "Real-time Processing",
+      description: "Fast AI-powered analysis with results in under 3 seconds",
+      color: "from-yellow-500 to-yellow-600",
+    },
+    {
+      icon: Database,
+      title: "Comprehensive Records",
+      description: "Complete patient management and scan history tracking",
+      color: "from-purple-500 to-purple-600",
+    },
   ]
 
-  const bloodGroupDistribution = [
-    { type: "O+", count: 472, percentage: 38 },
-    { type: "A+", count: 424, percentage: 34 },
-    { type: "B+", count: 112, percentage: 9 },
-    { type: "AB+", count: 37, percentage: 3 },
-    { type: "O-", count: 87, percentage: 7 },
-    { type: "A-", count: 75, percentage: 6 },
-    { type: "B-", count: 25, percentage: 2 },
-    { type: "AB-", count: 15, percentage: 1 },
+  const quickActions = [
+    {
+      title: "Register New Patient",
+      description: "Add a new patient to the system",
+      href: "/admin/register",
+      icon: Users,
+      color: "bg-green-600 hover:bg-green-700",
+    },
+    {
+      title: "Start Blood Scan",
+      description: "Begin fingerprint analysis for blood group detection",
+      href: "/admin/scan",
+      icon: Activity,
+      color: "bg-blue-600 hover:bg-blue-700",
+    },
+    {
+      title: "View Dashboard",
+      description: "Monitor system performance and analytics",
+      href: "/admin/dashboard",
+      icon: BarChart3,
+      color: "bg-purple-600 hover:bg-purple-700",
+    },
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-6">
-            <div className="p-4 bg-gradient-to-r from-red-600 to-pink-600 rounded-2xl shadow-lg">
-              <Shield className="h-10 w-10 text-white" />
+    <div className="container mx-auto px-6 py-12">
+      {/* Header Section */}
+      <div className="text-center mb-16">
+        <div className="flex items-center justify-center mb-6">
+          <div className="p-6 bg-gradient-to-r from-red-600 to-pink-600 rounded-3xl shadow-2xl">
+            <Heart className="h-16 w-16 text-white" />
+          </div>
+        </div>
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-red-900 to-pink-900 bg-clip-text text-transparent mb-6">
+          BloodScan Pro Admin Portal
+        </h1>
+        <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+          Advanced IoT-based blood group detection system using biometric fingerprint analysis. Manage patients, perform
+          scans, and monitor system performance from this centralized admin interface.
+        </p>
+        <div className="flex items-center justify-center space-x-4 mt-8">
+          <Badge className="px-4 py-2 text-base bg-green-100 text-green-800">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            System Online
+          </Badge>
+          <Badge variant="outline" className="px-4 py-2 text-base">
+            Version 1.0.0
+          </Badge>
+        </div>
+      </div>
+
+      {/* Project Overview */}
+      <Card className="mb-12 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8">
+          <CardTitle className="text-3xl flex items-center space-x-4">
+            <Shield className="h-8 w-8" />
+            <span>About This Project</span>
+          </CardTitle>
+          <CardDescription className="text-indigo-100 text-lg">
+            Final Year Computer Science Engineering Project - Academic Research
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-8">
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-2xl font-semibold mb-4 text-gray-800">Project Objectives</h3>
+              <ul className="space-y-3 text-gray-600">
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Develop IoT-based blood group detection using fingerprint biometrics</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Implement machine learning algorithms for pattern recognition</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Create secure patient management system with HIPAA compliance</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Build real-time monitoring and analytics dashboard</span>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold mb-4 text-gray-800">Technical Stack</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-2">Frontend</h4>
+                  <p className="text-sm text-blue-600">Next.js, TypeScript, Tailwind CSS</p>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-2">Backend</h4>
+                  <p className="text-sm text-green-600">tRPC, Prisma, SQLite</p>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <h4 className="font-semibold text-purple-800 mb-2">AI/ML</h4>
+                  <p className="text-sm text-purple-600">FastAPI, Python, TensorFlow</p>
+                </div>
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <h4 className="font-semibold text-orange-800 mb-2">IoT</h4>
+                  <p className="text-sm text-orange-600">Fingerprint Sensors, Arduino</p>
+                </div>
+              </div>
             </div>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-900 to-pink-900 bg-clip-text text-transparent mb-4">
-            Admin Dashboard
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Monitor system performance, manage users, and oversee blood group detection operations.
-          </p>
+        </CardContent>
+      </Card>
+
+      {/* Key Features */}
+      <div className="mb-12">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Key Features</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => {
+            const Icon = feature.icon
+            return (
+              <Card
+                key={index}
+                className="shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+              >
+                <CardContent className="p-6 text-center">
+                  <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${feature.color} mb-4`}>
+                    <Icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3 text-gray-800">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
-
-        {/* Quick Stats */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Scans</p>
-                  <p className="text-3xl font-bold text-blue-600">{stats.totalScans.toLocaleString()}</p>
-                </div>
-                <BarChart3 className="h-12 w-12 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Today's Scans</p>
-                  <p className="text-3xl font-bold text-green-600">{stats.todayScans}</p>
-                </div>
-                <Activity className="h-12 w-12 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active Users</p>
-                  <p className="text-3xl font-bold text-purple-600">{stats.activeUsers}</p>
-                </div>
-                <Users className="h-12 w-12 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="system">System</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              {/* System Status */}
-              <Card className="shadow-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Cpu className="h-5 w-5" />
-                    <span>System Status</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">CPU Usage</span>
-                        <span className="text-sm text-gray-500">{systemStatus.cpu}%</span>
-                      </div>
-                      <Progress value={systemStatus.cpu} className="h-2" />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">Memory Usage</span>
-                        <span className="text-sm text-gray-500">{systemStatus.memory}%</span>
-                      </div>
-                      <Progress value={systemStatus.memory} className="h-2" />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">Storage</span>
-                        <span className="text-sm text-gray-500">{systemStatus.storage}%</span>
-                      </div>
-                      <Progress value={systemStatus.storage} className="h-2" />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">Network</span>
-                        <span className="text-sm text-gray-500">{systemStatus.network}%</span>
-                      </div>
-                      <Progress value={systemStatus.network} className="h-2" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card className="shadow-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Activity className="h-5 w-5" />
-                    <span>Recent Activity</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentActivity.map((activity) => (
-                      <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium text-sm">{activity.action}</p>
-                          <p className="text-xs text-gray-500">by {activity.user}</p>
-                        </div>
-                        <div className="text-right">
-                          <Badge
-                            variant={
-                              activity.status === "success"
-                                ? "default"
-                                : activity.status === "warning"
-                                  ? "destructive"
-                                  : "secondary"
-                            }
-                          >
-                            {activity.status}
-                          </Badge>
-                          <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="system" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="shadow-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Database className="h-5 w-5" />
-                    <span>Database Status</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span>Connection Status</span>
-                    <Badge className="bg-green-500">Connected</Badge>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span>Total Records</span>
-                    <span className="font-semibold">1,247</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span>Last Backup</span>
-                    <span className="font-semibold">2 hours ago</span>
-                  </div>
-                  <Button className="w-full">
-                    <Database className="h-4 w-4 mr-2" />
-                    Backup Database
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Wifi className="h-5 w-5" />
-                    <span>API Status</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span>/api/prediction</span>
-                    <Badge className="bg-green-500">Active</Badge>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span>/api/status</span>
-                    <Badge className="bg-green-500">Active</Badge>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span>Response Time</span>
-                    <span className="font-semibold">120ms</span>
-                  </div>
-                  <Button variant="outline" className="w-full bg-transparent">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Test Endpoints
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <Card className="shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <BarChart3 className="h-5 w-5" />
-                  <span>Blood Group Distribution</span>
-                </CardTitle>
-                <CardDescription>Distribution of detected blood groups from all scans</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {bloodGroupDistribution.map((group) => (
-                    <div key={group.type} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded text-white text-sm font-bold flex items-center justify-center">
-                          {group.type}
-                        </div>
-                        <span className="font-medium">{group.type}</span>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="w-32">
-                          <Progress value={group.percentage} className="h-2" />
-                        </div>
-                        <span className="text-sm text-gray-500 w-12">{group.percentage}%</span>
-                        <span className="text-sm font-medium w-16">{group.count}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="shadow-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Settings className="h-5 w-5" />
-                    <span>System Configuration</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button className="w-full justify-start">
-                    <Cpu className="h-4 w-4 mr-2" />
-                    Scanner Calibration
-                  </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
-                    <Database className="h-4 w-4 mr-2" />
-                    Database Settings
-                  </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Security Settings
-                  </Button>
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
-                    <Users className="h-4 w-4 mr-2" />
-                    User Management
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5" />
-                    <span>System Alerts</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm font-medium text-yellow-800">Storage Warning</p>
-                    <p className="text-xs text-yellow-600">Storage is 78% full. Consider cleanup.</p>
-                  </div>
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm font-medium text-green-800">System Healthy</p>
-                    <p className="text-xs text-green-600">All systems operating normally.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
       </div>
+
+      {/* Quick Actions */}
+      <div className="mb-12">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Quick Actions</h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {quickActions.map((action, index) => {
+            const Icon = action.icon
+            return (
+              <Card
+                key={index}
+                className="shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+              >
+                <CardContent className="p-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <Icon className="h-8 w-8 text-gray-600" />
+                    <ArrowRight className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3 text-gray-800">{action.title}</h3>
+                  <p className="text-gray-600 mb-6">{action.description}</p>
+                  <Button asChild className={`w-full ${action.color} text-white`}>
+                    <Link href={action.href}>Get Started</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* System Status */}
+      <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
+          <CardTitle className="text-2xl flex items-center space-x-3">
+            <Activity className="h-6 w-6" />
+            <span>System Status</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-3xl font-bold text-green-600 mb-2">98.7%</div>
+              <div className="text-sm text-green-700">System Uptime</div>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-3xl font-bold text-blue-600 mb-2">2.8s</div>
+              <div className="text-sm text-blue-700">Avg Scan Time</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-3xl font-bold text-purple-600 mb-2">95.2%</div>
+              <div className="text-sm text-purple-700">Success Rate</div>
+            </div>
+            <div className="text-center p-4 bg-orange-50 rounded-lg">
+              <div className="text-3xl font-bold text-orange-600 mb-2">1,247</div>
+              <div className="text-sm text-orange-700">Total Scans</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

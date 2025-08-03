@@ -35,6 +35,68 @@ const paginationSchema = z.object({
 const FASTAPI_BASE_URL = process.env.FASTAPI_URL || "http://localhost:8000"
 
 export const appRouter = router({
+  // Authentication procedures
+  auth: router({
+    login: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          password: z.string().min(1),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { email, password } = input
+
+        // Simple authentication - in production, hash passwords
+        if (email === "admin@bloodscan.com" && password === "admin123") {
+          const user = {
+            id: "1",
+            email: "admin@bloodscan.com",
+            name: "Admin User",
+            role: "admin" as const,
+          }
+
+          await prisma.systemLog.create({
+            data: {
+              action: "User login",
+              details: `User ${email} logged in successfully`,
+              level: "info",
+            },
+          })
+
+          return {
+            success: true,
+            user,
+          }
+        }
+
+        await prisma.systemLog.create({
+          data: {
+            action: "Failed login attempt",
+            details: `Failed login attempt for ${email}`,
+            level: "warning",
+          },
+        })
+
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid credentials",
+        })
+      }),
+
+    logout: publicProcedure.mutation(async () => {
+      await prisma.systemLog.create({
+        data: {
+          action: "User logout",
+          details: "User logged out",
+          level: "info",
+        },
+      })
+
+      return { success: true }
+    }),
+  }),
+
   // Blood group prediction procedure
   prediction: router({
     // Create new prediction using FastAPI backend
@@ -444,57 +506,6 @@ export const appRouter = router({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to get scan status",
         })
-      }
-    }),
-
-    // Get FastAPI backend metrics
-    apiMetrics: publicProcedure.query(async () => {
-      try {
-        const metricsResponse = await fetch(`${FASTAPI_BASE_URL}/api/metrics`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-
-        if (!metricsResponse.ok) {
-          throw new Error(`Failed to fetch FastAPI metrics: ${metricsResponse.statusText}`)
-        }
-
-        const metrics = await metricsResponse.json()
-
-        return {
-          success: true,
-          data: {
-            apiVersion: metrics.version || "1.0.0",
-            totalRequests: metrics.total_requests || 0,
-            averageResponseTime: metrics.average_response_time || 0,
-            successRate: metrics.success_rate || 100,
-            activeConnections: metrics.active_connections || 0,
-            queueSize: metrics.queue_size || 0,
-            supportedBloodGroups: metrics.supported_blood_groups || ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
-            algorithmAccuracy: metrics.algorithm_accuracy || 98.5,
-            modelVersion: metrics.model_version || "1.0",
-            lastUpdated: metrics.last_updated || new Date().toISOString(),
-          },
-        }
-      } catch (error) {
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : "Failed to fetch FastAPI metrics",
-          data: {
-            apiVersion: "Unknown",
-            totalRequests: 0,
-            averageResponseTime: 0,
-            successRate: 0,
-            activeConnections: 0,
-            queueSize: 0,
-            supportedBloodGroups: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
-            algorithmAccuracy: 0,
-            modelVersion: "Unknown",
-            lastUpdated: new Date().toISOString(),
-          },
-        }
       }
     }),
   }),

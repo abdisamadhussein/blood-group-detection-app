@@ -3,13 +3,11 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Heart, Home, Users, FileText, Settings, UserPlus, BarChart3 } from "lucide-react"
+import { Heart, Home, Users, Settings, BarChart3 } from "lucide-react"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "About", href: "/about", icon: Heart },
-  { name: "Registration", href: "/registration", icon: UserPlus },
-  { name: "Results", href: "/results", icon: FileText },
   { name: "Contact", href: "/contact", icon: Users },
   { name: "Admin", href: "/admin", icon: Settings },
 ]
