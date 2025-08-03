@@ -55,10 +55,10 @@ export default function ScanPage() {
     onSuccess: (data) => {
       const scanResult: ScanResult = {
         bloodGroup: data.data.bloodGroup as BloodGroup,
-        confidence: data.data.confidence,
+        confidence: data.data.confidence || 0,
         timestamp: new Date(data.data.timestamp),
         sessionId: data.data.sessionId,
-        scanDuration: data.data.scanDuration,
+        scanDuration: data.data.scanDuration || 0,
       }
       setResult(scanResult)
       setScanHistory((prev) => [scanResult, ...prev.slice(0, 4)])
@@ -289,7 +289,7 @@ export default function ScanPage() {
                       <p className="text-blue-700 font-semibold">{selectedPatient.name}</p>
                       <p className="text-blue-600">{selectedPatient.email}</p>
                       <p className="text-sm text-blue-500">
-                        Age: {selectedPatient.age} • Phone: {selectedPatient.phone}
+                        Phone: {selectedPatient.phone}
                       </p>
                     </div>
                   </div>
@@ -431,7 +431,7 @@ export default function ScanPage() {
                   {scanState === "idle" && (
                     <Button
                       onClick={startScan}
-                      disabled={!selectedPatientId || !deviceConnected || predictionMutation.isLoading}
+                      disabled={!selectedPatientId || !deviceConnected || predictionMutation.isPending}
                       size="lg"
                       className="px-12 py-4 text-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-xl"
                     >

@@ -23,13 +23,13 @@ const predictionInputSchema = z.object({
 const statusInputSchema = z.object({
   sessionId: z.string().optional(),
   patientId: z.string().optional(),
-})
+}).optional().default({})
 
 const paginationSchema = z.object({
-  limit: z.number().min(1).max(100).default(10),
-  offset: z.number().min(0).default(0),
+  limit: z.number().min(1).max(100).default(10).optional(),
+  offset: z.number().min(0).default(0).optional(),
   patientId: z.string().optional(),
-})
+}).optional().default({})
 
 // FastAPI backend configuration
 const FASTAPI_BASE_URL = process.env.FASTAPI_URL || "http://localhost:8000"
@@ -250,7 +250,7 @@ export const appRouter = router({
     // Get predictions with pagination
     list: publicProcedure.input(paginationSchema).query(async ({ input }) => {
       try {
-        const { limit, offset, patientId } = input
+        const { limit = 10, offset = 0, patientId } = input || {}
         const where = patientId ? { patientId } : {}
 
         const [results, total] = await Promise.all([
@@ -397,7 +397,7 @@ export const appRouter = router({
     // Get specific scan status from FastAPI backend
     scan: publicProcedure.input(statusInputSchema).query(async ({ input }) => {
       try {
-        const { sessionId, patientId } = input
+        const { sessionId, patientId } = input || {}
 
         if (!sessionId && !patientId) {
           throw new TRPCError({
@@ -570,14 +570,14 @@ export const appRouter = router({
     list: publicProcedure
       .input(
         z.object({
-          limit: z.number().min(1).max(100).default(10),
-          offset: z.number().min(0).default(0),
+          limit: z.number().min(1).max(100).default(10).optional(),
+          offset: z.number().min(0).default(0).optional(),
           search: z.string().optional(),
-        }),
+        }).optional().default({}),
       )
       .query(async ({ input }) => {
         try {
-          const { limit, offset, search } = input
+          const { limit = 10, offset = 0, search } = input || {}
 
           const where = search
             ? {

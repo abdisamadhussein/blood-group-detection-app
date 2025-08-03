@@ -1,19 +1,30 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Heart, Home, Users, Settings, BarChart3 } from "lucide-react"
+import { useAuth } from "@/lib/auth"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "About", href: "/about", icon: Heart },
   { name: "Contact", href: "/contact", icon: Users },
-  { name: "Admin", href: "/admin", icon: Settings },
+  { name: "Admin", href: "/admin", icon: Settings, requiresAuth: true },
 ]
 
 export function Navigation() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { isAuthenticated } = useAuth()
+
+  const handleNavigation = (item: typeof navigation[0]) => {
+    if (item.requiresAuth && !isAuthenticated) {
+      router.push("/login")
+    } else {
+      router.push(item.href)
+    }
+  }
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -28,11 +39,15 @@ export function Navigation() {
             {navigation.map((item) => {
               const Icon = item.icon
               return (
-                <Button key={item.name} variant={pathname === item.href ? "default" : "ghost"} size="sm" asChild>
-                  <Link href={item.href} className="flex items-center space-x-2">
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Link>
+                <Button 
+                  key={item.name} 
+                  variant={pathname === item.href ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => handleNavigation(item)}
+                  className="flex items-center space-x-2"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.name}</span>
                 </Button>
               )
             })}

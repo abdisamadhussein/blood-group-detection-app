@@ -240,11 +240,11 @@ export default function RegisterPatientPage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={registerMutation.isLoading || !agreedToTerms}
+                  disabled={registerMutation.isPending || !agreedToTerms}
                   size="lg"
                   className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                 >
-                  {registerMutation.isLoading ? "Registering..." : "Register Patient"}
+                  {registerMutation.isPending ? "Registering..." : "Register Patient"}
                 </Button>
               </div>
             </form>

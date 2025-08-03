@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/lib/auth"
-import { trpc } from "@/lib/trpc/client"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -21,25 +20,37 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   const router = useRouter()
-  const { setUser } = useAuth()
+  const { login, isAuthenticated } = useAuth()
 
-  const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: (data) => {
-      setUser(data.user)
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
       router.push("/admin")
-    },
-    onError: (error) => {
-      setError(error.message)
-      setIsLoading(false)
-    },
-  })
+    }
+  }, [isAuthenticated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
-    loginMutation.mutate({ email, password })
+    try {
+      const success = await login(email, password)
+      if (success) {
+        console.log("✅ Login successful, redirecting to admin...")
+        // Force a small delay to ensure state is updated
+        setTimeout(() => {
+          router.push("/admin")
+        }, 100)
+      } else {
+        setError("Invalid credentials. Please try again.")
+        setIsLoading(false)
+      }
+    } catch (error) {
+      console.error("❌ Login error:", error)
+      setError("An unexpected error occurred. Please try again.")
+      setIsLoading(false)
+    }
   }
 
   return (

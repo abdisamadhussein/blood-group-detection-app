@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,8 +21,20 @@ import {
   BookOpen,
   Award,
 } from "lucide-react"
+import { useAuth } from "@/lib/auth"
 
 export default function HomePage() {
+  const router = useRouter()
+  const { isAuthenticated } = useAuth()
+
+  const handleAdminAccess = () => {
+    if (isAuthenticated) {
+      router.push("/admin")
+    } else {
+      router.push("/login")
+    }
+  }
+
   const features = [
     {
       icon: Fingerprint,
@@ -95,15 +108,13 @@ export default function HomePage() {
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
               <Button
-                asChild
+                onClick={handleAdminAccess}
                 size="lg"
                 className="px-12 py-6 text-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-xl"
               >
-                <Link href="/admin">
-                  <Activity className="h-6 w-6 mr-3" />
-                  Access Admin Panel
-                  <ArrowRight className="h-6 w-6 ml-3" />
-                </Link>
+                <Activity className="h-6 w-6 mr-3" />
+                Access Admin Panel
+                <ArrowRight className="h-6 w-6 ml-3" />
               </Button>
 
               <Button
@@ -374,15 +385,13 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
                 <Button
-                  asChild
+                  onClick={handleAdminAccess}
                   size="lg"
                   variant="secondary"
                   className="px-12 py-6 text-xl font-semibold bg-white text-blue-600 hover:bg-gray-100 transform hover:scale-105 transition-all duration-300"
                 >
-                  <Link href="/admin">
-                    <Users className="h-6 w-6 mr-3" />
-                    Access Admin Panel
-                  </Link>
+                  <Users className="h-6 w-6 mr-3" />
+                  Access Admin Panel
                 </Button>
 
                 <Button

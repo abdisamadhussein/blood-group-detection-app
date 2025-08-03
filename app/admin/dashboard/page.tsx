@@ -31,6 +31,30 @@ export default function DashboardPage() {
 
   const { data: statusData, isLoading, refetch } = trpc.status.system.useQuery()
 
+  // Extract the actual data from the tRPC response
+  const statistics = statusData?.data?.statistics || {
+    totalScans: 0,
+    todayScans: 0,
+    activePatients: 0,
+    successRate: "0"
+  }
+
+  const systemInfo = statusData?.data?.system || {
+    status: "unknown",
+    uptime: 0,
+    version: "1.0.0"
+  }
+
+  const fastApiBackend = statusData?.data?.fastApiBackend || {
+    status: "unhealthy",
+    responseTime: 0,
+    lastChecked: null
+  }
+
+  const bloodGroupDistribution = statusData?.data?.bloodGroupDistribution || []
+
+  const recentErrors = statusData?.data?.recentErrors || []
+
   // Simulate real-time updates for system metrics
   useEffect(() => {
     const interval = setInterval(() => {
@@ -90,7 +114,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm text-gray-600">Total Scans</p>
                 <p className="text-3xl font-bold text-blue-600">
-                  {statusData?.data.statistics.totalScans?.toLocaleString() || "0"}
+                  {statistics.totalScans?.toLocaleString() || "0"}
                 </p>
               </div>
               <BarChart3 className="h-12 w-12 text-blue-500" />
@@ -103,7 +127,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Today's Scans</p>
-                <p className="text-3xl font-bold text-green-600">{statusData?.data.statistics.todayScans || "0"}</p>
+                <p className="text-3xl font-bold text-green-600">{statistics.todayScans || "0"}</p>
               </div>
               <Activity className="h-12 w-12 text-green-500" />
             </div>
@@ -116,7 +140,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm text-gray-600">Active Patients</p>
                 <p className="text-3xl font-bold text-purple-600">
-                  {statusData?.data.statistics.activePatients || "0"}
+                  {statistics.activePatients || "0"}
                 </p>
               </div>
               <Users className="h-12 w-12 text-purple-500" />
@@ -129,7 +153,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Success Rate</p>
-                <p className="text-3xl font-bold text-emerald-600">{statusData?.data.statistics.successRate || "0"}%</p>
+                <p className="text-3xl font-bold text-emerald-600">{statistics.successRate || "0"}%</p>
               </div>
               <CheckCircle className="h-12 w-12 text-emerald-500" />
             </div>
@@ -246,7 +270,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <span>Total Records</span>
-                  <span className="font-semibold">{statusData?.data.statistics.totalScans || "0"}</span>
+                  <span className="font-semibold">{statistics.totalScans || "0"}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <span>Last Backup</span>
@@ -270,20 +294,20 @@ export default function DashboardPage() {
                 <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                   <span>API Status</span>
                   <Badge
-                    className={statusData?.data.fastApiBackend.status === "healthy" ? "bg-green-500" : "bg-red-500"}
+                    className={fastApiBackend.status === "healthy" ? "bg-green-500" : "bg-red-500"}
                   >
-                    {statusData?.data.fastApiBackend.status === "healthy" ? "Online" : "Offline"}
+                    {fastApiBackend.status === "healthy" ? "Online" : "Offline"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <span>Response Time</span>
-                  <span className="font-semibold">{statusData?.data.fastApiBackend.responseTime || 0}ms</span>
+                  <span className="font-semibold">{fastApiBackend.responseTime || 0}ms</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <span>Last Checked</span>
                   <span className="font-semibold">
-                    {statusData?.data.fastApiBackend.lastChecked
-                      ? new Date(statusData.data.fastApiBackend.lastChecked).toLocaleTimeString()
+                    {fastApiBackend.lastChecked
+                      ? new Date(fastApiBackend.lastChecked).toLocaleTimeString()
                       : "Never"}
                   </span>
                 </div>
@@ -307,7 +331,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {statusData?.data.bloodGroupDistribution?.map((group) => (
+                {bloodGroupDistribution.map((group) => (
                   <div key={group.bloodGroup} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded text-white text-sm font-bold flex items-center justify-center">
@@ -374,9 +398,9 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-green-800">System Healthy</p>
                   <p className="text-xs text-green-600">All systems operating normally.</p>
                 </div>
-                {statusData?.data.recentErrors && statusData.data.recentErrors.length > 0 && (
+                {recentErrors && recentErrors.length > 0 && (
                   <div className="space-y-2">
-                    {statusData.data.recentErrors.map((error) => (
+                    {recentErrors.map((error) => (
                       <div key={error.id} className="p-3 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm font-medium text-red-800">{error.action}</p>
                         <p className="text-xs text-red-600">{error.details}</p>

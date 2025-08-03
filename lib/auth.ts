@@ -22,6 +22,8 @@ export const useAuth = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       login: async (email: string, password: string) => {
+        console.log('🔐 Attempting login with:', email)
+        
         // Simple authentication - in production, this would call your API
         if (email === "admin@bloodscan.com" && password === "admin123") {
           const user: User = {
@@ -30,15 +32,20 @@ export const useAuth = create<AuthState>()(
             name: "Admin User",
             role: "admin",
           }
+          console.log('✅ Login successful for:', user.email)
           set({ user, isAuthenticated: true })
           return true
         }
+        
+        console.log('❌ Login failed for:', email)
         return false
       },
       logout: () => {
+        console.log('🚪 Logging out user')
         set({ user: null, isAuthenticated: false })
       },
       setUser: (user: User) => {
+        console.log('👤 Setting user:', user.email)
         set({ user, isAuthenticated: true })
       },
     }),

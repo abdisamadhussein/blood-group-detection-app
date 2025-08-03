@@ -84,7 +84,7 @@ export default function PatientsPage() {
 
         <Card className="shadow-lg">
           <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">{patientsData?.pagination.total || 0}</div>
+            <div className="text-3xl font-bold text-blue-600 mb-2">{patientsData?.pagination?.total || 0}</div>
             <div className="text-sm text-gray-600">Total Patients</div>
           </CardContent>
         </Card>
@@ -97,7 +97,7 @@ export default function PatientsPage() {
             <Users className="h-5 w-5" />
             <span>Registered Patients</span>
           </CardTitle>
-          <CardDescription>{patientsData?.pagination.total || 0} patients registered in the system</CardDescription>
+          <CardDescription>{patientsData?.pagination?.total || 0} patients registered in the system</CardDescription>
         </CardHeader>
         <CardContent>
           {patientsData?.data && patientsData.data.length > 0 ? (
@@ -153,7 +153,7 @@ export default function PatientsPage() {
               ))}
 
               {/* Pagination */}
-              {patientsData.pagination.hasMore && (
+              {patientsData?.pagination?.hasMore && (
                 <div className="flex justify-center pt-6">
                   <Button onClick={() => setCurrentPage((prev) => prev + 1)} variant="outline">
                     Load More Patients
