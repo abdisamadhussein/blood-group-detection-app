@@ -35,7 +35,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "use-sync-external-store": "latest",
-    "zod": "^4.0.14",
+    "zod": "^4.6.6",
     "zustand": "latest"
   },
   "devDependencies": {
